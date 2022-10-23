@@ -23,11 +23,6 @@ const size_t MAX_CAPACITY = 1024;
 template <class Type, size_t Capacity>
 class Array
 {
-private:
-
-    size_t capacity_ = Capacity;
-    Type data_[Capacity] = {};
-
 public:
 
     Array()
@@ -35,13 +30,30 @@ public:
     {
         for (size_t index = 0; index < Capacity; ++index)
         {
-            data_[index] = 0;
+            data_[index * sizeof(Type)] = 0;
         }
     }
 
 #ifdef BANNED_COPYING_CONSTRUCTOR
     Array(const Array &that) = delete;
 #endif
+
+    ~Array(){};
+
+
+    Array &operator =(const Array &array)
+    {
+        for (size_t index = 0; index < array.capacity_; ++index)
+        {
+            size_t converted_index = index * sizeof(Type);
+            data_[converted_index] = array.data_[converted_index];
+        }
+
+        capacity_ = array.capacity_;
+
+        return *this;
+    }
+
 
     size_t size() const
     {
@@ -55,24 +67,14 @@ public:
 
     Type &operator [](size_t index)
     {
-        return data_[index];
-    }
-
-    Array &operator =(const Array &array)
-    {
-        for (size_t index = 0; index < array.capacity_; ++index)
-        {
-            data_[index] = array.data_[index];
-        }
-
-        return *this;
+        return data_[index * sizeof(Type)];
     }
 
     Type &at(const size_t index) const
     {
         if (index < capacity_)
         {
-            return data_[index];
+            return data_[index * sizeof(Type)];
         }
 
         throw ArrayExceptions::INVALID_INDEX;
@@ -87,7 +89,7 @@ public:
     {
         for (size_t index = 0; index < capacity_; ++index)
         {
-            data_[index] = value;
+            data_[index * sizeof(Type)] = value;
         }
     }
 
@@ -98,9 +100,11 @@ public:
 #ifdef BANNED_COPYING_CONSTRUCTOR
             for (size_t index = 0; index < capacity_; ++index)
             {
-                Type temp_elem = data_[index];
-                data_[index] = other.data_[index];
-                other.data_[index] = temp_elem;
+                size_t converted_index = index * sizeof(Type);
+
+                Type temp_elem = data_[converted_index];
+                data_[converted_index] = other.data_[converted_index];
+                other.data_[converted_index] = temp_elem;
             }
 
             size_t temp_capacity = capacity_;
@@ -118,7 +122,13 @@ public:
             throw ArrayExceptions::SWAP_ARRAYS_WITH_MISMATCHING_CAPACITIES;   
         }
     }
+
+private:
+
+    size_t capacity_ = Capacity;
+    Type data_[Capacity] = {};
 };
+
 
 #ifdef ELEM_TYPE_COMPARISON_OPERATORS
 template <class Type, size_t Capacity>
